@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestión Gerencial — Asistente de Estudio</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0d0f;
+    --surface: #16161a;
+    --surface2: #1e1e24;
+    --border: #2a2a35;
+    --accent: #e8c547;
+    --accent2: #4fc3f7;
+    --accent3: #ff6b6b;
+    --text: #e8e8f0;
+    --muted: #888899;
+    --radius: 12px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── HEADER ── */
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 18px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    background: rgba(13,13,15,0.92);
+    backdrop-filter: blur(12px);
+    z-index: 100;
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .logo-icon {
+    width: 36px; height: 36px;
+    background: var(--accent);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .logo-text {
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .logo-sub {
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 400;
+  }
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .badge {
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* ── LAYOUT ── */
+  .app {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    height: calc(100vh - 65px);
+  }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    border-right: 1px solid var(--border);
+    padding: 20px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .sidebar-section-title {
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+    font-weight: 600;
+  }
+
+  /* Mode tabs */
+  .mode-tabs {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .mode-tab {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+    border: 1px solid transparent;
+    font-size: 13px;
+    font-weight: 600;
+    background: none;
+    color: var(--muted);
+    text-align: left;
+    width: 100%;
+  }
+  .mode-tab:hover { background: var(--surface2); color: var(--text); }
+  .mode-tab.active {
+    background: var(--surface2);
+    border-color: var(--border);
+    color: var(--text);
+  }
+  .mode-tab.active .tab-icon { color: var(--accent); }
+  .tab-icon { font-size: 16px; width: 20px; text-align: center; }
+
+  /* Upload zone */
+  .upload-zone {
+    border: 1.5px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: var(--surface);
+  }
+  .upload-zone:hover {
+    border-color: var(--accent);
+    background: rgba(232,197,71,0.04);
+  }
+  .upload-zone.dragover {
+    border-color: var(--accent);
+    background: rgba(232,197,71,0.08);
+  }
+  .upload-icon { font-size: 24px; margin-bottom: 6px; }
+  .upload-label { font-size: 12px; color: var(--muted); line-height: 1.5; }
+  .upload-label strong { color: var(--accent); }
+  #file-input { display: none; }
+
+  /* File list */
+  .file-list { display: flex; flex-direction: column; gap: 6px; }
+  .file-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    background: var(--surface2);
+    border-radius: 8px;
+    font-size: 12px;
+    border: 1px solid var(--border);
+  }
+  .file-item-icon { font-size: 14px; flex-shrink: 0; }
+  .file-item-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
+  .file-item-size { color: var(--muted); font-family: 'DM Mono', monospace; font-size: 10px; }
+  .file-remove {
+    background: none; border: none; color: var(--muted); cursor: pointer;
+    font-size: 14px; padding: 0; line-height: 1;
+    flex-shrink: 0;
+  }
+  .file-remove:hover { color: var(--accent3); }
+
+  /* Program input */
+  .program-area {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 12px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    resize: none;
+    min-height: 80px;
+    outline: none;
+    transition: border-color 0.2s;
+    line-height: 1.6;
+  }
+  .program-area:focus { border-color: var(--accent); }
+  .program-area::placeholder { color: var(--muted); }
+
+  /* Quick actions */
+  .quick-actions { display: flex; flex-direction: column; gap: 4px; }
+  .quick-btn {
+    display: flex; align-items: center; gap: 8px;
+    padding: 9px 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--muted);
+    font-size: 12px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: left;
+    width: 100%;
+  }
+  .quick-btn:hover {
+    background: var(--surface2);
+    color: var(--text);
+    border-color: var(--accent);
+  }
+  .quick-btn .qb-icon { font-size: 14px; }
+
+  /* ── MAIN AREA ── */
+  .main {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  /* Mode header */
+  .mode-header {
+    padding: 20px 28px 16px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .mode-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 22px;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+  .mode-title span { color: var(--accent); font-style: italic; }
+  .mode-desc { font-size: 12px; color: var(--muted); }
+
+  /* Chat area */
+  .chat-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  .chat-area::-webkit-scrollbar { width: 4px; }
+  .chat-area::-webkit-scrollbar-track { background: transparent; }
+  .chat-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* Welcome state */
+  .welcome {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    text-align: center;
+    padding: 40px;
+    opacity: 0;
+    animation: fadeUp 0.5s 0.1s forwards;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .welcome-icon { font-size: 48px; margin-bottom: 20px; }
+  .welcome-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 28px;
+    margin-bottom: 10px;
+    line-height: 1.2;
+  }
+  .welcome-title em { color: var(--accent); font-style: italic; }
+  .welcome-sub { font-size: 14px; color: var(--muted); max-width: 420px; line-height: 1.7; margin-bottom: 28px; }
+  .welcome-chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+  .chip {
+    padding: 8px 16px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    font-size: 12px;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .chip:hover {
+    border-color: var(--accent);
+    color: var(--text);
+    background: rgba(232,197,71,0.06);
+  }
+
+  /* Messages */
+  .msg {
+    display: flex;
+    gap: 12px;
+    animation: fadeUp 0.3s forwards;
+  }
+  .msg-avatar {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .msg.user .msg-avatar { background: var(--surface2); border: 1px solid var(--border); }
+  .msg.assistant .msg-avatar { background: var(--accent); color: #000; }
+  .msg-body { flex: 1; min-width: 0; }
+  .msg-role {
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+    font-weight: 600;
+  }
+  .msg-content {
+    font-size: 14px;
+    line-height: 1.75;
+    color: var(--text);
+  }
+  .msg.user .msg-content {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 2px 12px 12px 12px;
+    padding: 12px 16px;
+    display: inline-block;
+    max-width: 90%;
+  }
+  .msg-content p { margin-bottom: 10px; }
+  .msg-content p:last-child { margin-bottom: 0; }
+  .msg-content h3 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 16px;
+    color: var(--accent);
+    margin: 14px 0 6px;
+  }
+  .msg-content ul { padding-left: 18px; margin-bottom: 10px; }
+  .msg-content li { margin-bottom: 4px; }
+  .msg-content strong { color: var(--accent); font-weight: 700; }
+  .msg-content em { color: var(--accent2); }
+  .msg-content code {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--accent2);
+  }
+  .msg-content hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 14px 0;
+  }
+
+  /* Loading */
+  .loading-dots {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    padding: 4px 0;
+  }
+  .loading-dots span {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: pulse 1.2s ease-in-out infinite;
+  }
+  .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes pulse {
+    0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
+    40% { opacity: 1; transform: scale(1); }
+  }
+
+  /* Input area */
+  .input-area {
+    padding: 16px 28px 20px;
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .input-row {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    transition: border-color 0.2s;
+  }
+  .input-row:focus-within { border-color: var(--accent); }
+  #chat-input {
+    flex: 1;
+    background: none;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    resize: none;
+    min-height: 24px;
+    max-height: 140px;
+    line-height: 1.5;
+  }
+  #chat-input::placeholder { color: var(--muted); }
+  .send-btn {
+    width: 34px; height: 34px;
+    background: var(--accent);
+    border: none;
+    border-radius: 8px;
+    color: #000;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  .send-btn:hover { background: #f0d060; transform: scale(1.05); }
+  .send-btn:disabled { background: var(--border); color: var(--muted); cursor: not-allowed; transform: none; }
+  .input-hint {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 8px;
+    text-align: center;
+  }
+  .input-hint kbd {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 1px 5px;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+  }
+
+  /* Scrollbar general */
+  .sidebar::-webkit-scrollbar { width: 3px; }
+  .sidebar::-webkit-scrollbar-track { background: transparent; }
+  .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* Source badge */
+  .source-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: 'DM Mono', monospace;
+    margin-right: 4px;
+    margin-bottom: 10px;
+  }
+  .source-badge.pdf { background: rgba(255,107,107,0.15); color: var(--accent3); border: 1px solid rgba(255,107,107,0.3); }
+  .source-badge.web { background: rgba(79,195,247,0.15); color: var(--accent2); border: 1px solid rgba(79,195,247,0.3); }
+  .source-badge.program { background: rgba(232,197,71,0.15); color: var(--accent); border: 1px solid rgba(232,197,71,0.3); }
+
+  /* Error */
+  .error-msg {
+    color: var(--accent3);
+    font-size: 13px;
+    padding: 10px 14px;
+    background: rgba(255,107,107,0.08);
+    border: 1px solid rgba(255,107,107,0.2);
+    border-radius: 8px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">📚</div>
+    <div>
+      <div class="logo-text">Gestión Gerencial</div>
+      <div class="logo-sub">Asistente de Estudio</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <span class="badge" id="files-badge">0 archivos</span>
+    <span class="badge" id="mode-badge">chat libre</span>
+  </div>
+</header>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+
+    <div>
+      <div class="sidebar-section-title">Modo</div>
+      <div class="mode-tabs">
+        <button class="mode-tab active" data-mode="material" onclick="setMode('material')">
+          <span class="tab-icon">📖</span> Material cargado
+        </button>
+        <button class="mode-tab" data-mode="actualidad" onclick="setMode('actualidad')">
+          <span class="tab-icon">🌐</span> Actualidad
+        </button>
+        <button class="mode-tab" data-mode="examen" onclick="setMode('examen')">
+          <span class="tab-icon">✏️</span> Preguntas de examen
+        </button>
+        <button class="mode-tab" data-mode="resumen" onclick="setMode('resumen')">
+          <span class="tab-icon">📋</span> Resumen por unidad
+        </button>
+      </div>
+    </div>
+
+    <div>
+      <div class="sidebar-section-title">API Key</div>
+      <input
+        type="password"
+        id="api-key-input"
+        placeholder="sk-ant-..."
+        style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 10px;color:var(--text);font-family:'DM Mono',monospace;font-size:11px;outline:none;"
+      >
+      <div style="font-size:10px;color:var(--muted);margin-top:5px;line-height:1.5;">
+        Tu key de <a href="https://console.anthropic.com" target="_blank" style="color:var(--accent);">console.anthropic.com</a>. No se guarda en ningún lado.
+      </div>
+    </div>
+
+    <div>
+      <div class="sidebar-section-title">Archivos PDF</div>
+      <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()">
+        <div class="upload-icon">📄</div>
+        <div class="upload-label">
+          <strong>Cargá tus PDFs</strong><br>
+          libros, apuntes, artículos
+        </div>
+      </div>
+      <input type="file" id="file-input" accept=".pdf" multiple>
+      <div class="file-list" id="file-list" style="margin-top:10px;"></div>
+    </div>
+
+    <div>
+      <div class="sidebar-section-title">Programa / Unidades</div>
+      <textarea class="program-area" id="program-text" placeholder="Pegá aquí el programa de la materia, unidades, temas, bibliografía obligatoria..."></textarea>
+    </div>
+
+    <div>
+      <div class="sidebar-section-title">Accesos rápidos</div>
+      <div class="quick-actions">
+        <button class="quick-btn" onclick="quickAsk('Haceme un resumen completo de la Unidad 1 con todos los temas')">
+          <span class="qb-icon">📑</span> Resumen Unidad 1
+        </button>
+        <button class="quick-btn" onclick="quickAsk('Generame 10 preguntas de examen con sus respuestas basadas en todo el material')">
+          <span class="qb-icon">🎯</span> Simular examen
+        </button>
+        <button class="quick-btn" onclick="quickAsk('¿Qué noticias económicas y de gestión empresarial importantes ocurrieron esta semana en Argentina y el mundo?')">
+          <span class="qb-icon">📰</span> Noticias de la semana
+        </button>
+        <button class="quick-btn" onclick="quickAsk('¿Qué temas debería dominar para ir preparado a la próxima clase?')">
+          <span class="qb-icon">🚀</span> Preparar próxima clase
+        </button>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="mode-header">
+      <div class="mode-title" id="mode-title">Modo: <span>Material cargado</span></div>
+      <div class="mode-desc" id="mode-desc">Preguntá sobre los temas del programa y el contenido de tus PDFs</div>
+    </div>
+
+    <div class="chat-area" id="chat-area">
+      <div class="welcome" id="welcome-screen">
+        <div class="welcome-icon">🎓</div>
+        <div class="welcome-title">Hola. Estoy listo para<br>ayudarte con <em>Gestión Gerencial.</em></div>
+        <div class="welcome-sub">
+          Cargá tus PDFs y el programa en el panel izquierdo, elegí el modo que necesités y empezá a preguntar. Cuanto más material le des, mejor te va a responder.
+        </div>
+        <div class="welcome-chips">
+          <div class="chip" onclick="quickAsk('¿Cuáles son los conceptos clave de la administración estratégica?')">📌 Conceptos clave de la materia</div>
+          <div class="chip" onclick="quickAsk('Explicame la diferencia entre liderazgo y gerencia')">💡 Liderazgo vs Gerencia</div>
+          <div class="chip" onclick="quickAsk('¿Qué pasó esta semana en la economía argentina?')">📰 Economía esta semana</div>
+          <div class="chip" onclick="quickAsk('Generame preguntas de examen sobre gestión del cambio organizacional')">✏️ Preguntas de examen</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="input-area">
+      <div class="input-row">
+        <textarea id="chat-input" placeholder="Preguntá sobre el programa, pedí un resumen de una unidad, consultá actualidad..." rows="1"></textarea>
+        <button class="send-btn" id="send-btn" onclick="sendMessage()">↑</button>
+      </div>
+      <div class="input-hint"><kbd>Enter</kbd> para enviar · <kbd>Shift+Enter</kbd> para nueva línea</div>
+    </div>
+  </main>
+</div>
+
+<script>
+// ── STATE ──
+let mode = 'material';
+let uploadedFiles = []; // { name, size, base64, text }
+let conversationHistory = [];
+let isLoading = false;
+
+const modeConfig = {
+  material: {
+    title: 'Material cargado',
+    desc: 'Preguntá sobre los temas del programa y el contenido de tus PDFs',
+    systemExtra: 'Basate EXHAUSTIVAMENTE en el material cargado. Explicá con profundidad, ejemplos concretos y estructurá bien la respuesta. Si algo no está en el material, indicalo.',
+    badge: 'material'
+  },
+  actualidad: {
+    title: 'Actualidad',
+    desc: 'Noticias recientes de economía, política, tecnología y gestión empresarial',
+    systemExtra: 'El estudiante necesita estar al día con noticias recientes para la clase. Buscá y presentá los eventos más relevantes de la semana/mes en economía, política, tecnología y gestión empresarial, especialmente de Argentina y Latinoamérica. Conectalos con conceptos de gestión gerencial cuando sea posible.',
+    badge: 'actualidad'
+  },
+  examen: {
+    title: 'Preguntas de examen',
+    desc: 'Generá preguntas y respuestas para prepararte para los parciales',
+    systemExtra: 'Generá preguntas de examen rigurosas basadas en el material. Para cada pregunta incluí la respuesta completa y bien desarrollada. Variá entre preguntas conceptuales, de aplicación y de análisis. Señalá cuáles son los temas más probables de tomar.',
+    badge: 'examen'
+  },
+  resumen: {
+    title: 'Resumen por unidad',
+    desc: 'Resúmenes estructurados de cada unidad del programa',
+    systemExtra: 'Hacé resúmenes completos y bien estructurados por unidad. Incluí: conceptos principales, autores clave, teorías relevantes, ejemplos de aplicación y puntos que el alumno debe dominar. Usá un formato claro con títulos y subtítulos.',
+    badge: 'resumen'
+  }
+};
+
+// ── FILE HANDLING ──
+document.getElementById('file-input').addEventListener('change', e => {
+  Array.from(e.target.files).forEach(processFile);
+  e.target.value = '';
+});
+
+const uploadZone = document.getElementById('upload-zone');
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault();
+  uploadZone.classList.remove('dragover');
+  Array.from(e.dataTransfer.files).filter(f => f.type === 'application/pdf').forEach(processFile);
+});
+
+function processFile(file) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    const base64 = reader.result.split(',')[1];
+    const fileObj = { name: file.name, size: file.size, base64, id: Date.now() + Math.random() };
+    uploadedFiles.push(fileObj);
+    renderFileList();
+    updateBadge();
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeFile(id) {
+  uploadedFiles = uploadedFiles.filter(f => f.id !== id);
+  renderFileList();
+  updateBadge();
+}
+
+function renderFileList() {
+  const list = document.getElementById('file-list');
+  list.innerHTML = uploadedFiles.map(f => `
+    <div class="file-item">
+      <span class="file-item-icon">📄</span>
+      <span class="file-item-name" title="${f.name}">${f.name}</span>
+      <span class="file-item-size">${(f.size/1024).toFixed(0)}k</span>
+      <button class="file-remove" onclick="removeFile(${f.id})">✕</button>
+    </div>
+  `).join('');
+}
+
+function updateBadge() {
+  document.getElementById('files-badge').textContent = `${uploadedFiles.length} archivo${uploadedFiles.length !== 1 ? 's' : ''}`;
+}
+
+// ── MODE ──
+function setMode(m) {
+  mode = m;
+  document.querySelectorAll('.mode-tab').forEach(t => t.classList.toggle('active', t.dataset.mode === m));
+  const cfg = modeConfig[m];
+  document.getElementById('mode-title').innerHTML = `Modo: <span>${cfg.title}</span>`;
+  document.getElementById('mode-desc').textContent = cfg.desc;
+  document.getElementById('mode-badge').textContent = cfg.badge;
+  updatePlaceholder(m);
+}
+
+function updatePlaceholder(m) {
+  const placeholders = {
+    material: 'Preguntá sobre el programa, pedí explicaciones, comparaciones...',
+    actualidad: '¿Qué pasó esta semana en la economía? ¿Alguna empresa importante en las noticias?',
+    examen: 'Generame preguntas sobre la Unidad 2, hacé un simulacro de examen...',
+    resumen: 'Resumime la Unidad 3, dame los conceptos clave de toda la materia...'
+  };
+  document.getElementById('chat-input').placeholder = placeholders[m] || '';
+}
+
+// ── CHAT ──
+function buildSystemPrompt() {
+  const program = document.getElementById('program-text').value.trim();
+  const cfg = modeConfig[mode];
+
+  let system = `Sos un asistente de estudio especializado en Gestión Gerencial universitaria. Ayudás a un estudiante argentino a prepararse para clases y exámenes. Respondés siempre en español argentino, de forma clara, estructurada y pedagógica.\n\n`;
+
+  if (program) {
+    system += `## PROGRAMA DE LA MATERIA:\n${program}\n\n`;
+  }
+
+  system += `## INSTRUCCIONES DE MODO:\n${cfg.systemExtra}\n\n`;
+
+  if (uploadedFiles.length > 0) {
+    system += `## MATERIAL CARGADO:\nEl estudiante cargó ${uploadedFiles.length} archivo(s) PDF. Analizalos exhaustivamente para responder.\n\n`;
+  }
+
+  system += `Formateá las respuestas con títulos claros (###), negritas para conceptos clave, listas cuando corresponda. Sé preciso pero completo.`;
+
+  return system;
+}
+
+function buildMessages(userText) {
+  const messages = [];
+
+  // Include conversation history (last 6 exchanges)
+  const recent = conversationHistory.slice(-12);
+  for (const msg of recent) {
+    messages.push(msg);
+  }
+
+  // Build current user message
+  if (uploadedFiles.length > 0 && mode === 'material') {
+    // Include PDFs as documents
+    const content = [];
+    for (const f of uploadedFiles.slice(0, 3)) { // max 3 PDFs to avoid token limits
+      content.push({
+        type: 'document',
+        source: { type: 'base64', media_type: 'application/pdf', data: f.base64 }
+      });
+    }
+    content.push({ type: 'text', text: userText });
+    messages.push({ role: 'user', content });
+  } else {
+    messages.push({ role: 'user', content: userText });
+  }
+
+  return messages;
+}
+
+async function sendMessage(text) {
+  const input = document.getElementById('chat-input');
+  const userText = text || input.value.trim();
+  if (!userText || isLoading) return;
+
+  input.value = '';
+  input.style.height = 'auto';
+  isLoading = true;
+  document.getElementById('send-btn').disabled = true;
+
+  // Hide welcome
+  const welcome = document.getElementById('welcome-screen');
+  if (welcome) welcome.remove();
+
+  // Add user message
+  appendMessage('user', userText);
+
+  // Add loading
+  const loadingId = appendLoading();
+
+  try {
+    const needsWebSearch = mode === 'actualidad' || userText.toLowerCase().includes('noticia') || userText.toLowerCase().includes('esta semana') || userText.toLowerCase().includes('hoy') || userText.toLowerCase().includes('actualidad');
+
+    const body = {
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1000,
+      system: buildSystemPrompt(),
+      messages: buildMessages(userText),
+    };
+
+    if (needsWebSearch) {
+      body.tools = [{ type: 'web_search_20250305', name: 'web_search' }];
+    }
+
+    const apiKey = document.getElementById('api-key-input').value.trim();
+    if (!apiKey) {
+      removeLoading(loadingId);
+      appendError('Ingresá tu API key de Anthropic primero (panel izquierdo).');
+      isLoading = false;
+      document.getElementById('send-btn').disabled = false;
+      return;
+    }
+
+    const resp = await fetch('/api/chat', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+      },
+      body: JSON.stringify(body)
+    });
+
+    const data = await resp.json();
+
+    removeLoading(loadingId);
+
+    if (data.error) {
+      appendError(data.error.message || 'Error al conectar con la API');
+    } else {
+      // Extract text from content blocks
+      let responseText = '';
+      if (data.content) {
+        responseText = data.content
+          .filter(b => b.type === 'text')
+          .map(b => b.text)
+          .join('\n');
+      }
+
+      if (responseText) {
+        const sourceType = needsWebSearch ? 'web' : (uploadedFiles.length > 0 ? 'pdf' : 'program');
+        appendMessage('assistant', responseText, sourceType);
+
+        // Store in history (text only, no PDFs for history)
+        conversationHistory.push({ role: 'user', content: userText });
+        conversationHistory.push({ role: 'assistant', content: responseText });
+      } else {
+        appendError('No se pudo obtener una respuesta. Intentá de nuevo.');
+      }
+    }
+  } catch (err) {
+    removeLoading(loadingId);
+    appendError('Error de conexión: ' + err.message);
+  }
+
+  isLoading = false;
+  document.getElementById('send-btn').disabled = false;
+}
+
+function appendMessage(role, text, sourceType) {
+  const area = document.getElementById('chat-area');
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+
+  const avatar = role === 'user' ? '👤' : '✦';
+
+  let sourceTag = '';
+  if (role === 'assistant' && sourceType) {
+    const labels = { pdf: '📄 desde PDF', web: '🌐 con búsqueda web', program: '📋 desde programa' };
+    sourceTag = `<div><span class="source-badge ${sourceType}">${labels[sourceType] || ''}</span></div>`;
+  }
+
+  div.innerHTML = `
+    <div class="msg-avatar">${avatar}</div>
+    <div class="msg-body">
+      <div class="msg-role">${role === 'user' ? 'Vos' : 'Asistente'}</div>
+      ${sourceTag}
+      <div class="msg-content">${role === 'assistant' ? formatMarkdown(text) : escapeHtml(text)}</div>
+    </div>
+  `;
+
+  area.appendChild(div);
+  area.scrollTop = area.scrollHeight;
+}
+
+function appendLoading() {
+  const area = document.getElementById('chat-area');
+  const id = 'loading-' + Date.now();
+  const div = document.createElement('div');
+  div.className = 'msg assistant';
+  div.id = id;
+  div.innerHTML = `
+    <div class="msg-avatar">✦</div>
+    <div class="msg-body">
+      <div class="msg-role">Asistente</div>
+      <div class="loading-dots"><span></span><span></span><span></span></div>
+    </div>
+  `;
+  area.appendChild(div);
+  area.scrollTop = area.scrollHeight;
+  return id;
+}
+
+function removeLoading(id) {
+  const el = document.getElementById(id);
+  if (el) el.remove();
+}
+
+function appendError(msg) {
+  const area = document.getElementById('chat-area');
+  const div = document.createElement('div');
+  div.innerHTML = `<div class="error-msg">⚠️ ${escapeHtml(msg)}</div>`;
+  area.appendChild(div);
+  area.scrollTop = area.scrollHeight;
+}
+
+function quickAsk(text) {
+  document.getElementById('chat-input').value = text;
+  sendMessage(text);
+}
+
+// ── MARKDOWN FORMATTER ──
+function formatMarkdown(text) {
+  return text
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^## (.+)$/gm, '<h3>$1</h3>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/^---$/gm, '<hr>')
+    .replace(/^\* (.+)$/gm, '<li>$1</li>')
+    .replace(/^- (.+)$/gm, '<li>$1</li>')
+    .replace(/^(\d+)\. (.+)$/gm, '<li>$2</li>')
+    .replace(/(<li>.*<\/li>\n?)+/g, m => `<ul>${m}</ul>`)
+    .replace(/\n\n/g, '</p><p>')
+    .replace(/\n/g, '<br>')
+    .replace(/^(.+)$/, '<p>$1</p>');
+}
+
+function escapeHtml(text) {
+  return text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── INPUT HANDLING ──
+const chatInput = document.getElementById('chat-input');
+chatInput.addEventListener('input', () => {
+  chatInput.style.height = 'auto';
+  chatInput.style.height = Math.min(chatInput.scrollHeight, 140) + 'px';
+});
+chatInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+});
+</script>
+</body>
+</html>
