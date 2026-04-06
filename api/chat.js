@@ -74,7 +74,7 @@ module.exports = async function handler(req, res) {
 
     const body = {
       model: 'claude-sonnet-4-20250514',
-      max_tokens: 1500,
+      max_tokens: 8192,
       system: systemPrompt,
       messages,
     };
