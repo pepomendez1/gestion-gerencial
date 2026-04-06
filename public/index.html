@@ -519,19 +519,6 @@
     </div>
 
     <div>
-      <div class="sidebar-section-title">API Key</div>
-      <input
-        type="password"
-        id="api-key-input"
-        placeholder="sk-ant-..."
-        style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 10px;color:var(--text);font-family:'DM Mono',monospace;font-size:11px;outline:none;"
-      >
-      <div style="font-size:10px;color:var(--muted);margin-top:5px;line-height:1.5;">
-        Tu key de <a href="https://console.anthropic.com" target="_blank" style="color:var(--accent);">console.anthropic.com</a>. No se guarda en ningún lado.
-      </div>
-    </div>
-
-    <div>
       <div class="sidebar-section-title">Archivos PDF</div>
       <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()">
         <div class="upload-icon">📄</div>
@@ -779,33 +766,15 @@ async function sendMessage(text) {
   try {
     const needsWebSearch = mode === 'actualidad' || userText.toLowerCase().includes('noticia') || userText.toLowerCase().includes('esta semana') || userText.toLowerCase().includes('hoy') || userText.toLowerCase().includes('actualidad');
 
-    const body = {
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 1000,
-      system: buildSystemPrompt(),
-      messages: buildMessages(userText),
-    };
-
-    if (needsWebSearch) {
-      body.tools = [{ type: 'web_search_20250305', name: 'web_search' }];
-    }
-
-    const apiKey = document.getElementById('api-key-input').value.trim();
-    if (!apiKey) {
-      removeLoading(loadingId);
-      appendError('Ingresá tu API key de Anthropic primero (panel izquierdo).');
-      isLoading = false;
-      document.getElementById('send-btn').disabled = false;
-      return;
-    }
-
     const resp = await fetch('/api/chat', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-      },
-      body: JSON.stringify(body)
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messages: buildMessages(userText),
+        mode: mode,
+        program: document.getElementById('program-text').value.trim(),
+        useRag: true,
+      })
     });
 
     const data = await resp.json();
