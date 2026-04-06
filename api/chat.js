@@ -6,19 +6,29 @@ const supabase = createClient(
 );
 
 async function searchDocuments(query) {
-  const keywords = query
-    .split(/\s+/)
-    .filter(w => w.length > 3)
-    .slice(0, 8)
-    .join(' | ');
+  const openaiKey = process.env.OPENAI_API_KEY;
+  
+  // Get embedding for the query
+  const embRes = await fetch('https://api.openai.com/v1/embeddings', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${openaiKey}`,
+    },
+    body: JSON.stringify({ input: query, model: 'text-embedding-3-small' }),
+  });
+  const embData = await embRes.json();
+  if (!embData.data) {
+    console.error('Embedding error:', JSON.stringify(embData));
+    return [];
+  }
+  const embedding = embData.data[0].embedding;
 
-  if (!keywords) return [];
-
-  const { data, error } = await supabase
-    .from('documents')
-    .select('content, source')
-    .textSearch('fts', keywords, { config: 'spanish' })
-    .limit(8);
+  const { data, error } = await supabase.rpc('match_documents', {
+    query_embedding: embedding,
+    match_threshold: 0.3,
+    match_count: 8,
+  });
 
   if (error) {
     console.error('Search error:', error.message);
