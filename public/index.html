@@ -478,6 +478,21 @@
     border: 1px solid rgba(255,107,107,0.2);
     border-radius: 8px;
   }
+
+  .pdf-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-left: 8px;
+    font-family: 'DM Mono', monospace;
+    vertical-align: middle;
+    transition: all 0.15s;
+  }
+  .pdf-btn:hover { border-color: var(--accent); color: var(--accent); }
 </style>
 </head>
 <body>
@@ -826,12 +841,15 @@ function appendMessage(role, text, sourceType) {
     sourceTag = `<div><span class="source-badge ${sourceType}">${labels[sourceType] || ''}</span></div>`;
   }
 
+  const msgId = 'msg-' + Date.now();
+  const pdfBtn = role === 'assistant' ? `<button class="pdf-btn" onclick="downloadPDF('${msgId}')">↓ PDF</button>` : '';
+
   div.innerHTML = `
     <div class="msg-avatar">${avatar}</div>
     <div class="msg-body">
-      <div class="msg-role">${role === 'user' ? 'Vos' : 'Asistente'}</div>
+      <div class="msg-role">${role === 'user' ? 'Vos' : 'Asistente'} ${pdfBtn}</div>
       ${sourceTag}
-      <div class="msg-content">${role === 'assistant' ? formatMarkdown(text) : escapeHtml(text)}</div>
+      <div class="msg-content" id="${msgId}">${role === 'assistant' ? formatMarkdown(text) : escapeHtml(text)}</div>
     </div>
   `;
 
@@ -910,6 +928,51 @@ chatInput.addEventListener('keydown', e => {
     sendMessage();
   }
 });
+
+async function downloadPDF(msgId) {
+  const el = document.getElementById(msgId);
+  if (!el) return;
+
+  // Load jsPDF from CDN
+  if (!window.jspdf) {
+    await new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+      s.onload = resolve;
+      s.onerror = reject;
+      document.head.appendChild(s);
+    });
+  }
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  
+  const text = el.innerText || el.textContent;
+  const lines = doc.splitTextToSize(text, 170);
+  
+  doc.setFont('helvetica');
+  doc.setFontSize(11);
+  
+  let y = 20;
+  const pageH = 280;
+  
+  for (const line of lines) {
+    if (y > pageH) { doc.addPage(); y = 20; }
+    // Bold for lines that look like headings
+    if (line.trim() && !line.startsWith(' ') && line.length < 60 && line === line.toUpperCase()) {
+      doc.setFontSize(13);
+      doc.setFont('helvetica', 'bold');
+    } else {
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'normal');
+    }
+    doc.text(line, 20, y);
+    y += 6;
+  }
+  
+  doc.save('gestion-gerencial-' + Date.now() + '.pdf');
+}
+
 </script>
 </body>
 </html>
