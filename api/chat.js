@@ -78,7 +78,7 @@ module.exports = async function handler(req, res) {
       }
     }
 
-    const body = { model: 'claude-sonnet-4-20250514', max_tokens: 8192, system: systemPrompt, messages };
+    const body = { model: 'claude-sonnet-4-6', max_tokens: 8192, system: systemPrompt, messages };
     if (mode === 'actualidad') body.tools = [{ type: 'web_search_20250305', name: 'web_search' }];
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
